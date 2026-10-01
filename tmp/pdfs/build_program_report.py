@@ -1,0 +1,146 @@
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Preformatted
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import A4
+from pathlib import Path
+out=Path('output/pdf/StegoVerify_Start_Location_Explained.pdf')
+styles=getSampleStyleSheet()
+styles.add(ParagraphStyle(name='TitleX',fontName='Helvetica-Bold',fontSize=21,leading=25,textColor=colors.HexColor('#16324f'),spaceAfter=12))
+styles.add(ParagraphStyle(name='Deck',fontSize=11,leading=16,textColor=colors.HexColor('#526477'),spaceAfter=12))
+styles.add(ParagraphStyle(name='HeadX',fontName='Helvetica-Bold',fontSize=13,leading=17,textColor=colors.HexColor('#16324f'),spaceBefore=10,spaceAfter=6))
+styles.add(ParagraphStyle(name='BodyX',fontSize=10,leading=13.5,spaceAfter=7))
+styles.add(ParagraphStyle(name='CellX',fontSize=9,leading=12,spaceAfter=0))
+styles.add(ParagraphStyle(name='CodeX',fontName='Courier',fontSize=9,leading=14,backColor=colors.HexColor('#f0f4f8'),borderPadding=10,spaceBefore=6,spaceAfter=14))
+story=[]
+def p(t,style='BodyX'): story.append(Paragraph(t,styles[style]))
+def h(t): p(t,'HeadX')
+def code(t): story.append(Preformatted(t,styles['CodeX']))
+def table(rows,widths):
+ t=Table([[Paragraph(c,styles['CellX']) for c in r] for r in rows],colWidths=widths,hAlign='LEFT')
+ t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#e4edf5')),('VALIGN',(0,0),(-1,-1),'TOP'),('LEFTPADDING',(0,0),(-1,-1),9),('RIGHTPADDING',(0,0),(-1,-1),9),('TOPPADDING',(0,0),(-1,-1),6),('BOTTOMPADDING',(0,0),(-1,-1),6),('LINEBELOW',(0,0),(-1,-1),0.4,colors.HexColor('#d3dee8'))]))
+ story.append(t); story.append(Spacer(1,10))
+def footer(c,d):
+ c.setFont('Helvetica',8); c.setFillColor(colors.HexColor('#66788a'))
+ c.drawString(46,29,'StegoVerify | Program walkthrough | 1 October 2026')
+ c.drawRightString(A4[0]-46,29,str(d.page))
+import ast
+out=Path('output/pdf/StegoVerify_Program_Walkthrough_and_Viva_Guide.pdf')
+def ref(file,name):
+ tree=ast.parse(Path(file).read_text(encoding='utf-8-sig'))
+ for node in ast.walk(tree):
+  if isinstance(node,(ast.FunctionDef,ast.ClassDef)) and node.name==name:
+   return f'{file}:{node.lineno} ({name})'
+ return file+' ('+name+')'
+def sources(*items):
+ p('<b>Code to open:</b> '+'; '.join(ref(*x) for x in items),'CellX')
+def page(title,subtitle):
+ if story: story.append(PageBreak())
+ p(title,'TitleX');p(subtitle,'Deck')
+def qa(q,a): p('<b>'+q+'</b><br/>'+a)
+# PAGE 1
+page('How the program runs','StegoVerify code walkthrough and oral exam revision | 1 October 2026')
+p('<b>The short answer:</b> StegoVerify is a Python desktop app. Tkinter handles the window and button clicks. The GUI passes the selected files and settings to engine.py, which coordinates loading, hashing, signing, embedding, extraction and verification. The results are returned to the GUI for display.')
+h('Start here when asked to trace the main program')
+code('python app.py\n  -> if __name__ == "__main__": main()\n  -> App() -> App.__init__()\n  -> build tabs and shared state; try loading saved keys\n  -> app.mainloop() waits for user events\n\nPROTECT click -> App.p_run() -> engine.protect()\nVERIFY click  -> App.v_run() -> engine.verify()\nANALYSE click -> SteganalysisTab.run() -> analysis helpers')
+p('<b>main()</b> constructs the application, optionally loads a cover path passed on the command line, and starts the event loop. It does not automatically protect or verify every file.')
+p('<b>App.__init__()</b> creates keys/ and output/ if needed, initialises shared state, builds six tabs, constructs the analysis panel and tries to load existing team keys. If keys are absent, the user generates or loads them.')
+p('<b>A callback</b> is a function saved for later execution. For example, a button has command=self.p_run. Tkinter calls p_run when the user clicks it. The current processing happens in the GUI callbacks, so a long operation can temporarily make the interface busy.')
+h('Words the professor may use')
+table([['<b>Term</b>','<b>Meaning in this program</b>'],['Module','A Python file grouping related code, such as lsb.py or crypto_utils.py.'],['Function / method','A named operation. A method belongs to a class, such as App.p_run().'],['Class / object','A definition and a concrete instance. ImageCover and AudioCover provide a common way to work with different media.'],['Workflow coordinator','engine.protect() and engine.verify() call smaller functions in the required order.'],['Result object','ProtectResult or VerifyResult bundles values such as verdict, hashes, message and trace for the GUI.']],[120,383])
+sources(('app.py','main'),('app.py','App'),('app.py','p_run'),('app.py','v_run'))
+# PAGE 2
+page('The modules and team responsibilities','Know the whole flow first, then the functions in your own area')
+table([['<b>File</b>','<b>Purpose and important names</b>'],['app.py','Window, tabs and callbacks: p_run, v_run, p_update_capacity, gen_keys, v_save_payload. Also contains preview and tamper-button handlers.'],['engine.py','Coordinates Protect and Verify. Includes capacity_report, estimate_container, _locate, quality_metrics and tamper helpers.'],['covers.py','load_cover selects ImageCover or AudioCover. Both expose units, set_units, masked_hash, save and describe.'],['lsb.py','capacity_bytes, bytes_to_chunks, embed, extract and find_pattern. Works on units regardless of image/audio type.'],['payload.py','build_record, canonical, pack, parse_header, unpack_body and open_message. Defines the hidden container.'],['crypto_utils.py','SHA-256, HMAC, Ed25519 keys/signatures, scrypt and AES-GCM. Uses standard-library and cryptography implementations.'],['startloc.py','derive_start computes the keyed start. describe_unit converts a unit number into a readable location.'],['pngcodec.py','Loads and saves PNG pixels; optional Pillow fast path and a built-in PNG decoder/encoder. WAV loading uses Python wave in covers.py.'],['analysis.py / gui_analysis.py','Detection and comparison helpers; SteganalysisTab.run coordinates analysis and draws its results.'],['gui_support.py / charts.py','Image previews, waveform drawing, playback, opening extracted files and charts.'],['constants.py','App name/version and preset short, overview and confidential messages.'],['tools/ and tests/','Sample generation, reproducible case runner, GUI self-test helper and core unit tests.']],[150,353])
+h('How your members connect to the code')
+p('<b>Xin Rong:</b> image input and embedding (FR1/5). <b>Su Myat:</b> audio input and embedding (FR2/6). <b>Nell:</b> record generation and signatures (FR3/4). <b>Zharfan:</b> start location and innovation (FR7/13), plus the agreed capacity demonstration. <b>Aqil:</b> extraction, hash checks and verdicts (FR8/9/10). <b>Kalai:</b> test cases, evidence and steganalysis (FR11/12).')
+p('These are the agreed presentation responsibilities, not independent proof of who authored each function. Describe your actual implementation, testing and understanding honestly.')
+# PAGE 3
+page('Trace the Protect button','From a selected cover and message to a saved stego file')
+h('1  The GUI gathers and validates the inputs')
+p('<b>App.p_run()</b> checks that a cover and private key are available. It reads the LSB depth, start mode, shared secret, output path and optional encryption passphrase. <b>p_message_bytes()</b> returns UTF-8 bytes for typed text or raw bytes from the selected payload file. Manual coordinates are converted to a unit number.')
+h('2  The engine checks capacity before expensive work')
+p('<b>engine.protect()</b> validates n and loads the cover. It calculates embedding capacity and estimates the complete container size. An oversized container raises <b>CapacityError</b> before signing or encryption. This is separate from the GUI capacity indicator.')
+h('3  Build the signed verification record')
+p('<b>payload.build_record()</b> computes the masked cover hash, creates a UUID media ID, UTC timestamp and random nonce, and records metadata. It hashes the original message. If a passphrase is supplied, it encrypts the message and records the encryption parameters. It also hashes the actual stored bytes, which may be ciphertext.')
+h('4  Sign and pack')
+p('<b>canonical(record)</b> makes consistently ordered, compact JSON bytes. <b>cu.sign()</b> uses the Ed25519 private key to sign these bytes. <b>payload.pack()</b> joins the header, JSON record, signature, stored message and CRC. The engine checks the actual packed size as a second capacity safeguard.')
+code('Container:\n16-byte header | JSON record | 64-byte signature\n              | stored message bytes | 4-byte CRC-32')
+h('5  Choose the start and embed')
+p('Keyed mode calls <b>startloc.derive_start()</b>. Manual mode uses the supplied valid unit index. The engine copies the cover, calls <b>lsb.embed()</b> on its unit bytes, writes those units back and saves the PNG or WAV. The normal workflow preserves the original cover by using a separate output file.')
+h('6  Return to the GUI and prove the round trip')
+p('A <b>ProtectResult</b> returns the output path, record, signature, start and quality metrics. <b>p_run()</b> then calls <b>engine.verify()</b> on the saved output using the signing key\'s public key and matching settings. It compares the recovered bytes and hash with the original and shows ROUND TRIP OK. It also updates the Verify, Tamper and Analysis file selections.')
+sources(('app.py','p_message_bytes'),('app.py','p_run'),('stegoverify/engine.py','protect'),('stegoverify/payload.py','build_record'))
+# PAGE 4
+page('Trace the Verify button','The actual decision order matters when explaining a verdict')
+p('<b>App.v_run()</b> reads the received file, public key, LSB depth or auto, start mode, coordinates/secret, passphrase and scan setting. It calls <b>engine.verify()</b> and displays the returned verdict, reason, detailed trace and readable payload.')
+table([['<b>Step</b>','<b>Engine action</b>','<b>If it fails</b>'],['1','Load the cover and require a public key.','Cannot Verify'],['2','Calculate the expected start; in auto mode try depths 1 to 8. _locate checks the header at the expected position, then optionally scans.','Payload Missing if no valid header is found'],['3','Check claimed total length, extract the container, parse its JSON and check CRC-32.','Tampered for oversized/corrupt container or invalid JSON'],['4','Verify Ed25519 over the extracted record bytes using the selected public key.','Signature Invalid'],['5','Hash the stored message bytes and compare with signed stored_sha256.','Tampered'],['6','Recompute the masked media hash and compare it and the cover type with the signed record.','Tampered'],['7','Check whether the container was found at the expected start.','Wrong Start Location'],['8','Open the message; decrypt if encrypted. Hash recovered plaintext and compare with signed sha256.','Decryption error leaves message sealed; plaintext hash mismatch gives Tampered'],['9','Return the final successful verdict.','Authentic; may still say message sealed']],[38,320,145])
+p('<b>Why check the signature before trusting hashes?</b> An attacker can compute new hashes. The signature makes the record\'s hash values trustworthy relative to the selected public key.')
+p('<b>Why can a tampered keyed file still be diagnosed?</b> Its changed fingerprint may produce a different expected start. Scanning can recover the original container elsewhere; the media-hash mismatch is checked before Wrong Start Location.')
+p('<b>Authentic is not always proof of successful decryption.</b> If the passphrase is wrong or missing, this implementation can return Authentic for the valid container while message is None. Show PAYLOAD INTEGRITY: MATCH and the recovered content when proving extraction.')
+p('The GUI stores the result in <b>v_last</b>. <b>v_save_payload()</b> writes recovered message bytes to a chosen file and opens it with the system\'s default application.')
+sources(('app.py','v_run'),('stegoverify/engine.py','verify'),('stegoverify/engine.py','_locate'),('app.py','v_save_payload'))
+# PAGE 5
+page('How image and audio embedding work','One LSB algorithm, two media adapters')
+h('The cover becomes an ordered list of units')
+p('<b>PNG:</b> the file is decoded into pixel channel values before embedding. Each colour-channel byte is a unit; alpha is excluded from embedding. An RGB image has width x height x 3 units. The program changes pixels, not arbitrary bytes of the compressed PNG file.')
+p('<b>WAV/PCM:</b> units() selects the lowest byte of each channel sample. For 16-bit audio, the other byte is unchanged. The number of units is frames x channels. The GUI\'s manual audio sample index counts frames, so stereo frame 20,000 maps to unit 40,000.')
+h('LSB replacement and extraction')
+code('Example: n = 2, next payload chunk = binary 10\nOriginal unit:        10110101\nClear lowest 2 bits:  10110100\nOR with chunk:       10110110\nExtract low 2 bits:        10')
+p('<b>bytes_to_chunks()</b> splits container bits, most-significant bit first, into n-bit chunks, padding the last chunk if needed. <b>embed()</b> clears each unit\'s lowest n bits and inserts one chunk. <b>extract()</b> reads those bits and <b>chunks_to_bytes()</b> rebuilds exactly the requested number of bytes.')
+p('Embedding uses consecutive units from the selected start. <b>_wrapped_indices()</b> continues at unit zero if the payload reaches the end. It does not scatter every bit randomly. A full-capacity check prevents wrapping over already-written data.')
+h('Capacity is based on decoded units')
+code('Capacity bytes = floor(number of units x n / 8)\nUnits required = ceil(container bytes x 8 / n)\n\n1280 x 960 RGB image: 3,686,400 units\n5 LSB: 2,304,000 bytes (about 2.2 MiB)\n6 LSB: 2,764,800 bytes (about 2.6 MiB)\n4 s, 22,050 Hz stereo WAV: 176,400 units\n8 LSB: 176,400 bytes (about 172 KiB)')
+p('The interface labels binary-scaled sizes KB/MB. The full container includes header, record, signature and CRC, plus the encryption tag when used. <b>estimate_container()</b> uses a template and small safety margin; it is an estimate, not a perfectly exact prediction. <b>capacity_report()</b> checks depths 1 to 8 to suggest the minimum.')
+p('More LSBs increase capacity but allow larger value changes. PNG and WAV preserve the embedded bits; JPEG/MP3 are not supported covers. An MP4 can be a payload because it is stored as bytes; video-cover support is not implemented.')
+sources(('stegoverify/covers.py','ImageCover'),('stegoverify/covers.py','AudioCover'),('stegoverify/lsb.py','embed'),('stegoverify/engine.py','capacity_report'))
+# PAGE 6
+page('Your part and the security building blocks','Zharfan: start location, masked fingerprint and innovation')
+h('Manual and keyed starts')
+p('<b>Manual image:</b> pixel_to_unit(x, y) = (y * width + x) * colour_channels. Coordinates start at zero. For a 512-wide RGB image, (300, 300) maps to unit 461,700. Manual coordinates must be supplied to the receiver separately.')
+code('Keyed start:\nmsg = "SVFY-start|" + cover type + "|" + masked hash + n\nmac = HMAC-SHA256(shared secret, msg)\nstart = integer(mac) mod number of units')
+p('The same cover representation, secret and n give the same start. A different secret usually changes the start, but modulo collisions are possible. Random record IDs and nonces do not enter this calculation, so protecting the same cover again does not automatically change the start.')
+h('Why the receiver calculates the same start')
+p('Masking clears the lowest n bits temporarily before SHA-256. At n = 2, original 10110101 and stego 10110110 both become 10110100 for hashing. Embedding changes only the ignored bits, so both parties get the same masked hash. The saved file is not cleared.')
+p('<b>_locate()</b> reconstructs a 16-byte header and checks SVFY, version and plausible lengths. True means found at the expected start. If scanning finds a valid header elsewhere, False is returned. Only after the later signature and integrity checks pass does that mismatch become Wrong Start Location.')
+h('Do not mix up these mechanisms')
+table([['<b>Mechanism</b>','<b>Role in this code</b>'],['SHA-256','Unkeyed fingerprint: masked media, original message and stored message bytes. Hashing is not encryption.'],['HMAC-SHA256','Shared-secret keyed calculation used to derive the start. Receiver repeats it; nothing is decrypted.'],['Ed25519','Signs canonical JSON record bytes with a private key. The public key verifies. The signed hashes indirectly bind the message bytes.'],['AES-256-GCM','Optional message encryption and authentication. scrypt derives a 32-byte key from the passphrase and a random salt. A random IV and authentication tag are used.'],['CRC-32','Detects container corruption. It is not cryptographic authentication; an attacker can recompute it.']],[120,383])
+p('AES-GCM also receives associated data made from the media ID and record nonce. This binds the ciphertext to that context. Salt and IV are stored with the signed metadata; they need not be secret. The shared location secret, message passphrase and signing private key serve different purposes.')
+sources(('stegoverify/startloc.py','derive_start'),('stegoverify/covers.py','masked_hash'),('stegoverify/crypto_utils.py','encrypt_bytes'))
+# PAGE 7
+page('Testing, steganalysis and honest limits','What the implementation proves and what it does not')
+h('Tamper Lab and analysis')
+p('Tamper buttons call engine helpers and load a generated copy into Verify. <b>tamper_content()</b> changes image high bits or higher audio bytes. <b>strip_payload()</b> clears selected LSB planes. <b>tamper_lsb_region()</b> corrupts part of the embedded container. <b>truncate_audio()</b> shortens audio. <b>App.t_forge()</b> creates a new container signed by an attacker key.')
+p('A truncation may produce Tampered or Payload Missing depending on whether a readable header survives. Image content-tamper tests that preserve only four LSBs should not be assumed to preserve payloads embedded at higher depths.')
+p('<b>SteganalysisTab.run()</b> loads the suspect file and optional original. With both, it measures changes, MSE, PSNR/SNR and differences. With only a suspect, it can show bit planes, a known-format marker scan, image chi-square statistics and an audio silence heuristic.')
+p('Chi-square looks for equalised value counts consistent with LSB replacement; its p-value is not the probability that a hidden payload exists. The audio check flags small non-zero values in very quiet blocks. These are clues, not universal proof. The function named <b>signature_scan()</b> scans the SVFY format marker; it does not verify an Ed25519 signature.')
+h('Important limitations you should be able to explain')
+p('<b>Location is not confidentiality.</b> A visible SVFY marker is scanable. The application withholding a message is not a barrier to another extraction tool. Use encryption for confidential contents.')
+p('<b>The media hash is deliberately partial.</b> It ignores all selected low bits, including outside the payload. Changes only in those ignored bits can escape the media hash. At 8 LSB in an RGB image, no colour-value bits remain in that hash; image structure still contributes. The payload remains separately protected by signed hashes.')
+p('<b>Signatures need a trusted public key.</b> They show consistency with that key, not automatic proof of a person\'s identity. Timestamp and nonce fields alone do not stop replay: this code has no freshness policy or seen-record database.')
+p('<b>Other implementation limits:</b> the GUI-generated private key is saved without a PEM passphrase by default. No built-in network/email transfer is implemented. Large processing runs in the GUI thread. The displayed max_abs_diff uses maximum XOR, not true maximum absolute numeric difference, so do not describe that field as an exact error metric.')
+h('What was checked for this report')
+p('On 1 October 2026, <b>all 19 existing core tests passed</b> in this environment. They cover LSB round trips, wrap-around, masked hashing, workflow verdicts, encryption, file payloads, capacity and selected steganalysis checks. This was not a fresh end-to-end GUI/playback or network-transfer test.')
+p('The existing results.json records 47 passing cases from a previous run. tools/run_cases.py can regenerate evidence but clears its evidence/files directory first; it was not run for this report. Existing unit tests passing does not prove every security property or edge case.')
+sources(('stegoverify/engine.py','tamper_content'),('stegoverify/gui_analysis.py','run'),('stegoverify/analysis.py','signature_scan'))
+# PAGE 8
+page('Questions to practise aloud','Answer from the code and point to the responsible function')
+qa('How does your main program run?','main creates App and starts Tkinter mainloop. The app waits for events. Protect calls p_run, which calls engine.protect; Verify calls v_run, which calls engine.verify. The engine delegates to smaller modules and returns result objects.')
+qa('What exactly is being hidden?','A binary container: header, signed JSON verification record, Ed25519 signature, message bytes or ciphertext, and CRC. The message can be text, an image, audio or video.')
+qa('What exactly is signed?','The canonical JSON record bytes. It contains the masked media hash and hashes of the original and stored message. Those signed hash values bind the message to the record without signing the entire stego file.')
+qa('Why use canonical JSON?','To give the signer a stable byte representation: keys are sorted, extra whitespace is removed and text is encoded as UTF-8. Verification checks the extracted record bytes against the signature.')
+qa('Why do you need a signature if you already have a hash?','Anyone can compute a new hash after editing data. An attacker without the signing private key cannot generate a matching signature for an altered record under the trusted public key.')
+qa('How do you know how much to extract?','First extract the fixed 16-byte header. Its lengths tell us the sizes of the record, signature and stored message. We validate these and capacity before extracting the complete container.')
+qa('Why can a wrong location be distinguished from no payload?','Diagnostic scanning may find a valid container elsewhere. If its checks pass but its position differs from the expected one, the verdict is Wrong Start Location. No valid header found gives Payload Missing.')
+qa('What does your 5-to-6-LSB video demo prove?','The 2.4 MB video exceeds the audio cover capacity and the large image at five LSBs. Six LSBs provide enough capacity for the container. Verification plus plaintext hash MATCH and opening the recovered MP4 demonstrate successful extraction.')
+qa('Why might Authentic appear without a readable message?','The signature, stored-byte hash, masked media hash and position can all pass while decryption fails because the passphrase is missing or wrong. The GUI reports the message error separately; check payload integrity and recovered bytes too.')
+qa('What is the innovation and its limitation?','The content-bound keyed start and stable masked fingerprint let the receiver derive a start from the stego file. Wrap-around supports starts near the end. The visible header remains discoverable, and masking limits which media changes are detected.')
+qa('What did you use AI for?','Describe the actual tools and code assistance used, then your own review, tests, changes and limitations you understand. Do not claim independent authorship or validation you did not perform. Use the declaration to reflect what actually happened.')
+p('<b>Revision method:</b> practise one trace out loud: button -> GUI callback -> engine function -> helper modules -> returned result -> displayed evidence. Start with pages 1, 3 and 4; then revise your own area on pages 5 and 6.','CellX')
+# build
+SimpleDocTemplate(str(out),pagesize=A4,rightMargin=46,leftMargin=46,topMargin=40,bottomMargin=46,title='StegoVerify Program Walkthrough and Viva Guide',author='StegoVerify Team').build(story,onFirstPage=footer,onLaterPages=footer)
+from pypdf import PdfReader
+reader=PdfReader(out)
+print('OUTPUT',out.resolve(),'PAGES',len(reader.pages))
+for i,pg in enumerate(reader.pages):
+ t=pg.extract_text(); print(i+1,len(t),t.splitlines()[2:4])

@@ -1,0 +1,6 @@
+CONFIDENTIAL RELEASE RECORD
+asset: press_kit_hero_v3
+approved_by: media-verification-team
+licence: internal-use-only
+contact: release-desk@example.org
+note: this record is AES-256-GCM encrypted inside the signed payload, so only holders of the release passphrase can read it, and any modification is detected by both the GCM tag and the Ed25519 signature.

@@ -1,0 +1,92 @@
+[
+  {
+    "kind": "image",
+    "units": 589824,
+    "masked_hash": "cdccf5fcdb59944f203b9caed5c57f9f8bc0a64bdaecbdd5eadfd2ed22de3e4b",
+    "same_masked_hash": true,
+    "entries": [
+      {
+        "secret": "team-secret-2026",
+        "mac": "0dd2f4e6589d5b8b06294f3f77bb94cd256afb617f9735db8cde3475e7587838",
+        "start": 358456,
+        "description": "unit 358456 = pixel (x=189, y=233) channel G"
+      },
+      {
+        "secret": "team-secret-2027",
+        "mac": "30ffca770077f9ed3147de0ef5047c675cc8be1bdfd6761414bd076448a52813",
+        "start": 141331,
+        "description": "unit 141331 = pixel (x=6, y=92) channel G"
+      }
+    ],
+    "checks": {
+      "correct": {
+        "verdict": "Authentic",
+        "expected": 358456,
+        "found": 358456,
+        "message_returned": true
+      },
+      "wrong": {
+        "verdict": "Wrong Start Location",
+        "expected": 141331,
+        "found": 358456,
+        "message_returned": false
+      },
+      "wrong_no_scan": {
+        "verdict": "Payload Missing",
+        "expected": null,
+        "found": null,
+        "message_returned": false
+      }
+    },
+    "manual": {
+      "unit": 461700,
+      "correct": "Authentic",
+      "wrong": "Wrong Start Location"
+    }
+  },
+  {
+    "kind": "audio",
+    "units": 176400,
+    "masked_hash": "f568512d968240c74c5d72df825e254b3a00de1018295d583cae9f097f257c2c",
+    "same_masked_hash": true,
+    "entries": [
+      {
+        "secret": "team-secret-2026",
+        "mac": "99dd3a1e68195e9f97736c9c3db9f96afa35754bc506ca2a08a5da04d21676e4",
+        "start": 73220,
+        "description": "unit 73220 = sample 36610 (t = 1.660 s, channel 0)"
+      },
+      {
+        "secret": "team-secret-2027",
+        "mac": "126f778096fcd02f9d327322dac729dc049b245352aa92a14c4a25f5dbee3dc9",
+        "start": 53945,
+        "description": "unit 53945 = sample 26972 (t = 1.223 s, channel 1)"
+      }
+    ],
+    "checks": {
+      "correct": {
+        "verdict": "Authentic",
+        "expected": 73220,
+        "found": 73220,
+        "message_returned": true
+      },
+      "wrong": {
+        "verdict": "Wrong Start Location",
+        "expected": 53945,
+        "found": 73220,
+        "message_returned": false
+      },
+      "wrong_no_scan": {
+        "verdict": "Payload Missing",
+        "expected": null,
+        "found": null,
+        "message_returned": false
+      }
+    },
+    "manual": {
+      "unit": 40000,
+      "correct": "Authentic",
+      "wrong": "Wrong Start Location"
+    }
+  }
+]
