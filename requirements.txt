@@ -1,3 +1,2 @@
 cryptography>=41.0
-# optional but recommended: faster PNG loading and JPEG payload previews
 pillow>=10.0
