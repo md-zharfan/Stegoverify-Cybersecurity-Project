@@ -24,7 +24,7 @@ python app.py
 ```
 pip install -r requirements.txt
 python app.py                     # start the GUI
-python tools/make_samples.py      # (optional) regenerate samples/ - already included
+python tools/make_samples.py
 ```
 
 The PNG codec, WAV handling and LSB engine use only the standard library
