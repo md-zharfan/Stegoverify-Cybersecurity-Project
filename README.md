@@ -1,4 +1,4 @@
-# StegoVerify — LSB steganography + hashing + digital signatures
+# StegoVerify - LSB steganography + hashing + digital signatures
 
 INF2005 ACW1 (2026). A window-based (Tkinter) tool that hides a *payload* (text, picture,
 audio, video or any file) plus a *signed verification record* inside a **PNG image** or a
