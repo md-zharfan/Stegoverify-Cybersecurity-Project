@@ -33,18 +33,7 @@ so a 2.4 MB video payload embeds in well under a second. Audio playback uses `wi
 Windows, `afplay` on macOS and `paplay`/`aplay`/`ffplay` on Linux; other payload types (MP3,
 MP4, JPEG ...) are opened with the system's default application.
 
-## 2. Lecturer feedback → where it is in the tool
-
-| Feedback | Where / how |
-|---|---|
-| Display the stego image, check for distortion | Tab 2 shows cover and stego side by side + *Show difference ×64*; PSNR/SNR, MSE, % units changed, max change. Tab 5 adds a ×5 magnified crop at the payload start, a full difference image and the difference waveform. |
-| Decode to get the payload out | Tab 3 *Verify* extracts it; text is shown, pictures are previewed, audio can be played, video/other files open in the default player; *Save / open extracted payload*. |
-| Compare hash of initial payload with hash of final payload | The initial payload's SHA-256 is stored in the **signed** record. After Protect, tab 2 immediately runs a **round trip** (save → reload → extract) and shows `initial SHA-256` vs `extracted SHA-256` → MATCH. Tab 3 shows the same **PAYLOAD INTEGRITY** panel for received files. Evidence table in `evidence/TEST_EVIDENCE.md`. |
-| Different sizes and types of payload (audio, video, picture) | `samples/payloads/` – text (127 B, 672 B, 355 B), picture (PNG 733 B, JPEG 22 KB), audio (WAV 94 KB, MP3 118 KB), video (MP4 84 KB, MP4 2.4 MB). *File...* in tab 2 accepts any file. |
-| Payload too big → error message | Live capacity bar (green/red) with *"TOO LARGE ... needs at least N LSB"* or *"does not fit even at 8 LSB"*; Protect refuses with an error dialog. |
-| Steganalysis (e.g. waveform difference for audio) | Tab 5: cover-vs-stego waveform overlay + **difference waveform**, where-the-payload-is chart, LSB-plane *visual attack*, histograms, **chi-square attack** (images) and **silence test** (audio). |
-
-## 3. Repository layout
+## 2. Repository layout
 
 | Path | Purpose |
 |---|---|
@@ -68,7 +57,7 @@ MP4, JPEG ...) are opened with the system's default application.
 | `samples/`, `samples/payloads/` | Cover objects and payload files (below) |
 | `keys/`, `output/` | Created at run time: PEM keys, stego outputs |
 
-## 4. Sample covers and payloads
+## 3. Sample covers and payloads
 
 | Cover | Details | Capacity at 1 / 4 / 8 LSB |
 |---|---|---|
@@ -93,7 +82,7 @@ Minimum LSB depth needed for each payload (✗ = does not fit even at 8 LSB):
 | 08_video_small.mp4 | 84 KB | 2 | 1 | 4 | 1 |
 | 09_video_large.mp4 | 2.4 MB | ✗ | 6 | ✗ | ✗ |
 
-## 5. Using the GUI (the Party A → Party B workflow)
+## 4. Using the GUI (the Party A → Party B workflow)
 
 1. **Keys & identity** – click *Generate new team key pair*. `keys/team_private.pem` stays with
    Party A; `keys/team_public.pem` is distributed to verifiers.
@@ -116,14 +105,14 @@ Minimum LSB depth needed for each payload (✗ = does not fit even at 8 LSB):
    *Difference*, *LSB plane*, *Histogram*, *Chi-square / silence test*; the findings box
    summarises PSNR/SNR and what each blind test concluded.
 
-## 6. Reproducing the test evidence
+## 5. Reproducing the test evidence
 
 ```
 python tools/run_cases.py          # 47 cases -> evidence/TEST_EVIDENCE.md (+ payload & steganalysis tables)
 python -m unittest tests.test_core # 19 unit tests
 ```
 
-## 7. Security design in one paragraph
+## 6. Security design in one paragraph
 
 Party A computes the **LSB-masked SHA-256** of the cover (all bits except the n LSBs that will
 be overwritten), builds a JSON record `{media_id, ts, nonce, hash, lsb_bits, meta, msg:{name,
